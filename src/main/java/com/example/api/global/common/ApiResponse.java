@@ -1,7 +1,8 @@
 package com.example.api.global.common;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.example.api.global.error.ErrorCode;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,8 +19,8 @@ public class ApiResponse<T> {
     @Schema(description = "응답 데이터")
     private final T data;
 
-    @Schema(description = "오류 메시지", example = "잘못된 입력값입니다.")
-    private final String message;
+    @Schema(description = "오류 정보")
+    private final ErrorResponse error;
 
     public static <T> ApiResponse<T> ok(T data) {
         return new ApiResponse<>(true, data, null);
@@ -29,7 +30,23 @@ public class ApiResponse<T> {
         return new ApiResponse<>(true, null, null);
     }
 
-    public static ApiResponse<Void> error(String message) {
-        return new ApiResponse<>(false, null, message);
+    public static ApiResponse<Void> error(ErrorCode errorCode) {
+        return error(errorCode, errorCode.getMessage());
+    }
+
+    public static ApiResponse<Void> error(ErrorCode errorCode, String message) {
+        return new ApiResponse<>(false, null, new ErrorResponse(errorCode.name(), message));
+    }
+
+    @Getter
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @Schema(description = "API 오류 응답")
+    public static class ErrorResponse {
+
+        @Schema(description = "오류 코드", example = "MEMBER_NOT_FOUND")
+        private final String code;
+
+        @Schema(description = "오류 메시지", example = "회원을 찾을 수 없습니다.")
+        private final String message;
     }
 }

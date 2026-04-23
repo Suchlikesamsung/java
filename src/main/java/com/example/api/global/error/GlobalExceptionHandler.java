@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
-                .body(ApiResponse.error(errorCode.getMessage()));
+                .body(ApiResponse.error(errorCode));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
                 .orElse("잘못된 입력값입니다.");
         return ResponseEntity
                 .badRequest()
-                .body(ApiResponse.error(message));
+                .body(ApiResponse.error(ErrorCode.INVALID_INPUT, message));
     }
 
     @ExceptionHandler(Exception.class)
@@ -38,6 +38,6 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception: ", e);
         return ResponseEntity
                 .internalServerError()
-                .body(ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
+                .body(ApiResponse.error(ErrorCode.INTERNAL_SERVER_ERROR));
     }
 }

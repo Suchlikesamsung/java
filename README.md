@@ -20,10 +20,12 @@ JPA, QueryDSL, 공통 응답 포맷, 전역 예외 처리, Swagger 문서화를 
 - 회원 생성, 조회, 수정, 삭제 API
 - QueryDSL 기반 회원 이름 검색
 - 공통 API 응답 포맷
+- 코드와 메시지를 포함한 표준 에러 응답 포맷
 - 비즈니스 예외와 전역 예외 처리
 - JPA Auditing을 활용한 생성일/수정일 관리
 - Swagger UI 기반 API 문서 제공
 - `local`, `test` 환경별 Spring Profile 분리
+- Mockito 기반 서비스 단위 테스트
 
 ## Project Structure
 
@@ -91,6 +93,8 @@ Password:
 ```bash
 ./gradlew test
 ```
+
+현재 테스트는 회원 서비스의 조회, 검색, 생성, 수정, 삭제, 예외 흐름을 검증합니다.
 
 ## Profile
 
