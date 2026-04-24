@@ -30,9 +30,13 @@ public class MemberRequest {
     private String email;
 
     public Member toEntity() {
+        return toEntity(password);
+    }
+
+    public Member toEntity(String encodedPassword) {
         return Member.builder()
                 .userid(userid)
-                .password(password)
+                .password(encodedPassword)
                 .username(username)
                 .email(email)
                 .build();
