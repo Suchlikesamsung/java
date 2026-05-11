@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +28,7 @@ public class MemberService {
     public List<MemberResponse> findAll() {
         return memberRepository.findAll().stream()
                 .map(MemberResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public MemberResponse findByUserid(String userid) {
@@ -41,7 +40,7 @@ public class MemberService {
     public List<MemberResponse> search(String keyword) {
         return memberRepository.findByUsernameContaining(keyword).stream()
                 .map(MemberResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public LoginResponse login(LoginRequest request) {
