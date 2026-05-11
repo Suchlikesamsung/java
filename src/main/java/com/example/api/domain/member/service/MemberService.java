@@ -48,7 +48,7 @@ public class MemberService {
         Member member = memberRepository.findByUserid(request.getUserid())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN));
 
-        if (!matchesPassword(request.getPassword(), member.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_LOGIN);
         }
 
@@ -78,10 +78,5 @@ public class MemberService {
         Member member = memberRepository.findByUserid(userid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
         memberRepository.delete(member);
-    }
-
-    private boolean matchesPassword(String rawPassword, String savedPassword) {
-        return passwordEncoder.matches(rawPassword, savedPassword)
-                || rawPassword.equals(savedPassword);
     }
 }
