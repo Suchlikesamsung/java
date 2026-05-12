@@ -1,14 +1,11 @@
 package com.example.api.domain.member.service;
 
-import com.example.api.domain.member.dto.LoginRequest;
-import com.example.api.domain.member.dto.LoginResponse;
 import com.example.api.domain.member.dto.MemberRequest;
 import com.example.api.domain.member.dto.MemberResponse;
 import com.example.api.domain.member.entity.Member;
 import com.example.api.domain.member.repository.MemberRepository;
 import com.example.api.global.error.BusinessException;
 import com.example.api.global.error.ErrorCode;
-import com.example.api.global.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,9 +32,6 @@ class MemberServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
-
-    @Mock
-    private JwtTokenProvider jwtTokenProvider;
 
     @InjectMocks
     private MemberService memberService;
@@ -119,35 +113,6 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("로그인 성공 시 Bearer 토큰을 발급한다")
-    void login() {
-        Member member = createMember("hong", "홍길동", "hong@example.com");
-        LoginRequest request = createLoginRequest("hong", "password1234");
-        when(memberRepository.findByUserid("hong")).thenReturn(Optional.of(member));
-        when(passwordEncoder.matches("password1234", "password1234")).thenReturn(true);
-        when(jwtTokenProvider.createToken("hong")).thenReturn("access-token");
-
-        LoginResponse response = memberService.login(request);
-
-        assertThat(response.getGrantType()).isEqualTo("Bearer");
-        assertThat(response.getAccessToken()).isEqualTo("access-token");
-    }
-
-    @Test
-    @DisplayName("비밀번호가 일치하지 않으면 INVALID_LOGIN 예외가 발생한다")
-    void loginInvalidPassword() {
-        Member member = createMember("hong", "홍길동", "hong@example.com");
-        LoginRequest request = createLoginRequest("hong", "wrong-password");
-        when(memberRepository.findByUserid("hong")).thenReturn(Optional.of(member));
-        when(passwordEncoder.matches("wrong-password", "password1234")).thenReturn(false);
-
-        assertThatThrownBy(() -> memberService.login(request))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.INVALID_LOGIN);
-    }
-
-    @Test
     @DisplayName("회원 삭제 시 Repository delete를 호출한다")
     void delete() {
         Member member = createMember("hong", "홍길동", "hong@example.com");
@@ -173,13 +138,6 @@ class MemberServiceTest {
         ReflectionTestUtils.setField(request, "password", password);
         ReflectionTestUtils.setField(request, "username", username);
         ReflectionTestUtils.setField(request, "email", email);
-        return request;
-    }
-
-    private LoginRequest createLoginRequest(String userid, String password) {
-        LoginRequest request = new LoginRequest();
-        ReflectionTestUtils.setField(request, "userid", userid);
-        ReflectionTestUtils.setField(request, "password", password);
         return request;
     }
 }

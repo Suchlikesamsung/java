@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 response.sendError(HttpStatus.FORBIDDEN.value())))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/members").permitAll()
                         .requestMatchers(
                                 "/swagger-ui.html",

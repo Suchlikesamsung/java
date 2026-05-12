@@ -1,14 +1,11 @@
 package com.example.api.domain.member.service;
 
-import com.example.api.domain.member.dto.LoginResponse;
 import com.example.api.domain.member.dto.MemberRequest;
 import com.example.api.domain.member.dto.MemberResponse;
-import com.example.api.domain.member.dto.LoginRequest;
 import com.example.api.domain.member.entity.Member;
 import com.example.api.domain.member.repository.MemberRepository;
 import com.example.api.global.error.BusinessException;
 import com.example.api.global.error.ErrorCode;
-import com.example.api.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,7 +20,6 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
 
     public List<MemberResponse> findAll() {
         return memberRepository.findAll().stream()
@@ -41,20 +37,6 @@ public class MemberService {
         return memberRepository.findByUsernameContaining(keyword).stream()
                 .map(MemberResponse::from)
                 .toList();
-    }
-
-    public LoginResponse login(LoginRequest request) {
-        Member member = memberRepository.findByUserid(request.getUserid())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN));
-
-        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-            throw new BusinessException(ErrorCode.INVALID_LOGIN);
-        }
-
-        return LoginResponse.builder()
-                .grantType("Bearer")
-                .accessToken(jwtTokenProvider.createToken(member.getUserid()))
-                .build();
     }
 
     @Transactional

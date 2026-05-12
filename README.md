@@ -26,6 +26,7 @@ JPA, QueryDSL, JWT 인증, 공통 응답 포맷, 전역 예외 처리, Swagger �
 - 모든 응답은 `success`, `data`, `error`를 기준으로 같은 형태를 유지합니다.
 - 예외는 `BusinessException`과 `ErrorCode`로 분리해 한 곳에서 관리합니다.
 - JWT 기반 로그인과 보호 API 인증 흐름을 구성했습니다.
+- Access / Refresh 토큰을 분리하고, 리프레시 토큰은 DB에 저장해 회전·로그아웃 시 무효화합니다.
 - 생성일/수정일은 JPA Auditing으로 자동 기록합니다.
 - Swagger UI로 API를 바로 확인할 수 있습니다.
 - `local`, `test` 프로파일을 나누어 실행 환경을 분리했습니다.
@@ -67,7 +68,9 @@ http://localhost:8080/v3/api-docs
 | Method | URL | Auth | Description |
 | --- | --- | --- | --- |
 | `POST` | `/api/members` | Public | 회원 생성 |
-| `POST` | `/api/login` | Public | 로그인 및 JWT 발급 |
+| `POST` | `/api/auth/login` | Public | 로그인 및 토큰 발급 |
+| `POST` | `/api/auth/refresh` | Public | 리프레시 토큰으로 재발급 |
+| `POST` | `/api/auth/logout` | Bearer Token | 로그아웃 (리프레시 토큰 폐기) |
 | `GET` | `/api/members` | Bearer Token | 전체 회원 조회 |
 | `GET` | `/api/members/{userid}` | Bearer Token | 회원 단건 조회 |
 | `GET` | `/api/members/search?keyword={keyword}` | Bearer Token | 회원 이름 검색 |
@@ -91,10 +94,10 @@ Content-Type: application/json
 }
 ```
 
-생성한 계정으로 로그인하면 access token을 받을 수 있습니다.
+생성한 계정으로 로그인하면 access / refresh 토큰 한 쌍을 받을 수 있습니다.
 
 ```http
-POST /api/login HTTP/1.1
+POST /api/auth/login HTTP/1.1
 Host: localhost:8080
 Content-Type: application/json
 
@@ -104,16 +107,37 @@ Content-Type: application/json
 }
 ```
 
-로그인에 성공하면 아래처럼 `Bearer` 토큰이 내려옵니다.
+로그인에 성공하면 아래처럼 두 토큰이 함께 내려옵니다.
 
 ```json
 {
   "success": true,
   "data": {
     "grantType": "Bearer",
-    "accessToken": "eyJhbGciOiJIUzI1NiJ9..."
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
   }
 }
+```
+
+액세스 토큰이 만료되면 리프레시 토큰으로 새 토큰 쌍을 발급받습니다. 이때 기존 리프레시 토큰은 회전되어 사용할 수 없게 됩니다.
+
+```http
+POST /api/auth/refresh HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+로그아웃은 서버에 저장된 리프레시 토큰을 삭제해, 이후 재발급을 차단합니다.
+
+```http
+POST /api/auth/logout HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 ```
 
 이후 인증이 필요한 API는 `Authorization` 헤더에 토큰을 담아서 호출합니다.
@@ -153,10 +177,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 인증은 Spring Security와 JWT를 사용했습니다. 세션을 쓰지 않는 stateless 구조라서, 로그인 이후에는 클라이언트가 토큰을 들고 API를 호출하는 방식입니다.
 
-- 회원 가입과 로그인 API는 인증 없이 접근할 수 있습니다.
-- 로그인 성공 시 `Bearer` 타입의 access token을 발급합니다.
-- 보호된 API는 `Authorization: Bearer {token}` 헤더가 필요합니다.
+- 회원 가입, 로그인, 토큰 재발급 API는 인증 없이 접근할 수 있습니다.
+- 로그인 성공 시 짧은 수명의 access token과 긴 수명의 refresh token을 함께 발급합니다.
+- 보호된 API는 `Authorization: Bearer {accessToken}` 헤더가 필요합니다.
+- 액세스 토큰이 만료되면 `/api/auth/refresh` 로 새 토큰 쌍을 받을 수 있고, 발급 시점에 기존 리프레시 토큰은 회전됩니다.
+- 로그아웃 시 DB에 저장된 리프레시 토큰을 제거해, 탈취된 토큰으로 재발급되는 것을 막습니다.
 - JWT 검증은 `JwtAuthenticationFilter`에서 처리하고, 인증된 사용자 정보는 `SecurityContext`에 저장됩니다.
+- 액세스/리프레시 토큰은 `type` claim으로 구분해, 잘못된 종류의 토큰으로 인증·재발급이 일어나지 않도록 막습니다.
 - 인증 실패 시 `401 Unauthorized`, 권한 부족 시 `403 Forbidden`을 반환합니다.
 
 ## H2 Console
@@ -195,7 +222,7 @@ Password:
 ./gradlew test
 ```
 
-현재 테스트는 회원 서비스의 조회, 검색, 생성, 수정, 삭제, 로그인, 예외 흐름을 검증합니다.
+현재 테스트는 회원 서비스의 CRUD, 검색, 그리고 인증 서비스의 로그인·토큰 재발급·회전·로그아웃 흐름과 예외 케이스를 검증합니다.
 
 ## Profile
 

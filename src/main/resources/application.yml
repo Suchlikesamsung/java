@@ -11,7 +11,8 @@ server:
 app:
   jwt:
     secret: local-development-jwt-secret-key-must-be-at-least-32-bytes
-    expiration-milliseconds: 3600000
+    access-expiration-milliseconds: 1800000      # 30분
+    refresh-expiration-milliseconds: 1209600000  # 14일
 
 springdoc:
   swagger-ui:
