@@ -4,14 +4,14 @@ import com.example.api.domain.member.dto.MemberRequest;
 import com.example.api.domain.member.dto.MemberResponse;
 import com.example.api.domain.member.entity.Member;
 import com.example.api.domain.member.repository.MemberRepository;
+import com.example.api.global.common.PageResponse;
 import com.example.api.global.error.BusinessException;
 import com.example.api.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,10 +21,8 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public List<MemberResponse> findAll() {
-        return memberRepository.findAll().stream()
-                .map(MemberResponse::from)
-                .toList();
+    public PageResponse<MemberResponse> findAll(Pageable pageable) {
+        return PageResponse.from(memberRepository.findAll(pageable).map(MemberResponse::from));
     }
 
     public MemberResponse findByUserid(String userid) {
@@ -33,10 +31,9 @@ public class MemberService {
         return MemberResponse.from(member);
     }
 
-    public List<MemberResponse> search(String keyword) {
-        return memberRepository.findByUsernameContaining(keyword).stream()
-                .map(MemberResponse::from)
-                .toList();
+    public PageResponse<MemberResponse> search(String keyword, Pageable pageable) {
+        return PageResponse.from(
+                memberRepository.findByUsernameContaining(keyword, pageable).map(MemberResponse::from));
     }
 
     @Transactional

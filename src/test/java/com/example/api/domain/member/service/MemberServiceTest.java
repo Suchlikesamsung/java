@@ -4,6 +4,7 @@ import com.example.api.domain.member.dto.MemberRequest;
 import com.example.api.domain.member.dto.MemberResponse;
 import com.example.api.domain.member.entity.Member;
 import com.example.api.domain.member.repository.MemberRepository;
+import com.example.api.global.common.PageResponse;
 import com.example.api.global.error.BusinessException;
 import com.example.api.global.error.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
@@ -12,6 +13,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -37,16 +41,20 @@ class MemberServiceTest {
     private MemberService memberService;
 
     @Test
-    @DisplayName("전체 회원 목록을 조회한다")
+    @DisplayName("전체 회원 목록을 페이지 단위로 조회한다")
     void findAll() {
         Member member = createMember("hong", "홍길동", "hong@example.com");
-        when(memberRepository.findAll()).thenReturn(List.of(member));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(memberRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(member), pageable, 1));
 
-        List<MemberResponse> responses = memberService.findAll();
+        PageResponse<MemberResponse> page = memberService.findAll(pageable);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).getUserid()).isEqualTo("hong");
-        assertThat(responses.get(0).getUsername()).isEqualTo("홍길동");
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getUserid()).isEqualTo("hong");
+        assertThat(page.getTotalElements()).isEqualTo(1);
+        assertThat(page.getPage()).isZero();
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.isLast()).isTrue();
     }
 
     @Test
@@ -73,15 +81,18 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("키워드로 회원을 검색한다")
+    @DisplayName("키워드로 회원을 페이지 단위로 검색한다")
     void search() {
         Member member = createMember("hong", "홍길동", "hong@example.com");
-        when(memberRepository.findByUsernameContaining("홍")).thenReturn(List.of(member));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(memberRepository.findByUsernameContaining("홍", pageable))
+                .thenReturn(new PageImpl<>(List.of(member), pageable, 1));
 
-        List<MemberResponse> responses = memberService.search("홍");
+        PageResponse<MemberResponse> page = memberService.search("홍", pageable);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).getUsername()).isEqualTo("홍길동");
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getUsername()).isEqualTo("홍길동");
+        assertThat(page.getTotalElements()).isEqualTo(1);
     }
 
     @Test

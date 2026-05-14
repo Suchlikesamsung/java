@@ -23,6 +23,7 @@ JPA, QueryDSL, JWT 인증, 공통 응답 포맷, 전역 예외 처리, Swagger �
 
 - 회원 가입, 조회, 수정, 삭제 흐름을 REST API로 구현했습니다.
 - 이름 검색은 QueryDSL로 처리해, 동적 쿼리 확장 가능성을 열어두었습니다.
+- 목록/검색 API는 Pageable 기반으로 페이지·정렬 파라미터를 받고, 공통 `PageResponse` 형태로 감싸 응답합니다.
 - 모든 응답은 `success`, `data`, `error`를 기준으로 같은 형태를 유지합니다.
 - 예외는 `BusinessException`과 `ErrorCode`로 분리해 한 곳에서 관리합니다.
 - JWT 기반 로그인과 보호 API 인증 흐름을 구성했습니다.
@@ -71,9 +72,9 @@ http://localhost:8080/v3/api-docs
 | `POST` | `/api/auth/login` | Public | 로그인 및 토큰 발급 |
 | `POST` | `/api/auth/refresh` | Public | 리프레시 토큰으로 재발급 |
 | `POST` | `/api/auth/logout` | Bearer Token | 로그아웃 (리프레시 토큰 폐기) |
-| `GET` | `/api/members` | Bearer Token | 전체 회원 조회 |
+| `GET` | `/api/members?page={page}&size={size}&sort={field,dir}` | Bearer Token | 전체 회원 페이지 조회 |
 | `GET` | `/api/members/{userid}` | Bearer Token | 회원 단건 조회 |
-| `GET` | `/api/members/search?keyword={keyword}` | Bearer Token | 회원 이름 검색 |
+| `GET` | `/api/members/search?keyword={keyword}&page={page}&size={size}` | Bearer Token | 회원 이름 페이지 검색 |
 | `PUT` | `/api/members/{userid}` | Bearer Token | 회원 정보 수정 |
 | `DELETE` | `/api/members/{userid}` | Bearer Token | 회원 삭제 |
 
